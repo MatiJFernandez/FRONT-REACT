@@ -58,6 +58,28 @@ export const UserProvider = ({ children }) => {
             setError(e.message);
         }
     };
+
+    const updateUserRole = async (userId, newRole) => {
+        setLoading(true);
+        try {
+            const response = await axios.put(`http://localhost:3000/users/${userId}/role`, { rol: newRole });
+            
+            if (response.status === 200) {
+                // Actualizar la lista de usuarios
+                setUsers(prevUsers => 
+                    prevUsers.map(user => 
+                        user.id === userId ? { ...user, rol: newRole } : user
+                    )
+                );
+                alert('Rol actualizado exitosamente');
+            }
+        } catch (error) {
+            console.error('Error al actualizar rol:', error);
+            throw error;
+        } finally {
+            setLoading(false);
+        }
+    };
     
 
     useEffect(() => {
@@ -73,7 +95,8 @@ export const UserProvider = ({ children }) => {
                 getUsers,
                 addUser,
                 editUser,
-                deleteUser
+                deleteUser,
+                updateUserRole
             }}
         >
             {children}

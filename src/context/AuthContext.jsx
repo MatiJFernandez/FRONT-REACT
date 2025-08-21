@@ -2,12 +2,14 @@ import { createContext, useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { jwtDecode } from "jwt-decode";
+import { useToast } from '../components/Toast';
 
 export const AuthContext = createContext()
 
 export const AuthProvider = ({children}) =>{
     const [user,setUser] = useState(null)
     const navigate = useNavigate()
+    const { showSuccess, showError, showInfo } = useToast()
 
 
     const decodeUser = (token)=>{
@@ -58,19 +60,19 @@ export const AuthProvider = ({children}) =>{
                 if(!userLogued){
                     localStorage.removeItem('token')
                     delete axios.defaults.headers.common["Authorization"]
-                    alert("Token invalido o esta expirado")
+                    showError("Token invalido o esta expirado")
                     return
                 }
                 
                 setUser(userLogued)
+                showSuccess("Sesión iniciada exitosamente")
                 navigate('/')
             }else{
-                alert('Las credenciales son erroneas')
+                showError('Las credenciales son erroneas')
             }
         } catch (error) {
             console.log(error);
-            
-            alert("Hubo error al iniciar sesion")
+            showError("Hubo error al iniciar sesion")
         }
     }
 
@@ -78,13 +80,13 @@ export const AuthProvider = ({children}) =>{
         try {
             const response = await axios.post('http://localhost:3000/auth/register', userData)
             if(response.status === 201){
-                alert("Usuario creado exitosamente")
+                showSuccess("Usuario creado exitosamente")
                 navigate('/inicio-sesion')
             }else{
-                alert(response.message)
+                showError(response.message)
             }
         } catch (error) {
-            alert("Hubo un error al registrar el usuario")
+            showError("Hubo un error al registrar el usuario")
         }
     }
 
@@ -92,6 +94,7 @@ export const AuthProvider = ({children}) =>{
         setUser(null)
         localStorage.removeItem('token')
         delete axios.defaults.headers.common["Authorization"]
+        showInfo("Sesión cerrada exitosamente")
         navigate('/inicio-sesion')
     }
 

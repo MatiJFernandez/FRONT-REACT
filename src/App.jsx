@@ -14,6 +14,10 @@ import LoginForm from './layouts/auth/LoginForm';
 import RegisterForm from './layouts/auth/RegisterForm';
 
 import PrivateRoute from './utils/PrivateRoute';
+import AdminRoute from './utils/AdminRoute';
+import PublicRoute from './utils/PublicRoute';
+import Navbar from './components/Navbar';
+import { ToastProvider } from './components/Toast';
 
 import './App.css';
 import 'primereact/resources/themes/lara-dark-indigo/theme.css';
@@ -23,34 +27,55 @@ import 'primeicons/primeicons.css';
 function App() {
   return (
     <Router>
+      <ToastProvider>
         <AuthProvider>
           <Fragment>
-            <Routes>
-              <Route path="/" element={<Home />} />
-              <Route path='/inicio-sesion' element={<LoginForm/>}/>
-              <Route path='/registro' element={<RegisterForm/>}/>
-              <Route
-                path="/productos/*"
-                element={
-                  <PrivateRoute>
-                    <ProductProvider>
-                      <ProductRoutes />
-                    </ProductProvider>
-                  </PrivateRoute>
-                }
-              />
-              <Route
-                path="/usuarios/*"
-                element={
-                  <UserProvider>
-                    <UserRoutes />
-                  </UserProvider>
-                }
-              />
-            </Routes>
+            <Navbar />
+            <div style={{ padding: '20px' }}>
+              <Routes>
+                <Route path="/" element={<Home />} />
+                <Route 
+                  path='/inicio-sesion' 
+                  element={
+                    <PublicRoute>
+                      <LoginForm/>
+                    </PublicRoute>
+                  }
+                />
+                <Route 
+                  path='/registro' 
+                  element={
+                    <PublicRoute>
+                      <RegisterForm/>
+                    </PublicRoute>
+                  }
+                />
+                <Route
+                  path="/productos/*"
+                  element={
+                    <PrivateRoute>
+                      <ProductProvider>
+                        <ProductRoutes />
+                      </ProductProvider>
+                    </PrivateRoute>
+                  }
+                />
+                <Route
+                  path="/usuarios/*"
+                  element={
+                    <AdminRoute>
+                      <UserProvider>
+                        <UserRoutes />
+                      </UserProvider>
+                    </AdminRoute>
+                  }
+                />
+              </Routes>
+            </div>
           </Fragment>
         </AuthProvider>
-      </Router>
+      </ToastProvider>
+    </Router>
   );
 }
 

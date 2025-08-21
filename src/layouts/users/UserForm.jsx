@@ -4,6 +4,11 @@ import { useUserContext } from "../../context/UserContext";
 import { useNavigate, useParams } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { Button } from "primereact/button";
+import { useContext } from 'react';
+import { AuthContext } from '../../context/AuthContext';
+import { InputText } from 'primereact/inputtext';
+import { InputNumber } from 'primereact/inputnumber';
+import { Dropdown } from 'primereact/dropdown';
 
 const validationSchema = Yup.object({
   nombre: Yup.string()
@@ -36,6 +41,7 @@ export default function UserForm() {
     contrasenia: "",
     edad: 0,
   });
+  const { user: currentUser } = useContext(AuthContext);
 
   const isEdit = Boolean(id);
 
@@ -61,6 +67,32 @@ export default function UserForm() {
     }
     navigate("/usuarios");
   };
+
+  // Verificar que solo los admins puedan acceder
+  useEffect(() => {
+    if (currentUser && currentUser.rol !== 'admin') {
+      alert('Acceso denegado. Solo los administradores pueden gestionar usuarios.');
+      navigate('/');
+      return;
+    }
+  }, [currentUser, navigate]);
+
+  // Si no es admin, mostrar mensaje de acceso denegado
+  if (currentUser && currentUser.rol !== 'admin') {
+    return (
+      <div style={{ textAlign: 'center', padding: '50px' }}>
+        <h2> Acceso Denegado</h2>
+        <p>No tienes permisos para acceder a esta funcionalidad.</p>
+        <p>Solo los administradores pueden gestionar usuarios.</p>
+        <Button label="Volver al Inicio" onClick={() => navigate('/')} />
+      </div>
+    );
+  }
+
+  const roleOptions = [
+    { label: 'Usuario', value: 'user' },
+    { label: 'Administrador', value: 'admin' }
+  ];
 
   return (
     <div className="p-d-flex p-flex-column p-align-center p-mt-3">
@@ -140,6 +172,20 @@ export default function UserForm() {
               name="edad"
               component="div"
               className="p-text-danger"
+            />
+          </div>
+
+          <div style={{ marginBottom: '1rem' }}>
+            <label htmlFor="rol" style={{ display: 'block', marginBottom: '0.5rem' }}>
+              Rol:
+            </label>
+            <Dropdown
+              id="rol"
+              value={initialValues.rol}
+              options={roleOptions}
+              onChange={(e) => setInitialValues({ ...initialValues, rol: e.value })}
+              placeholder="Seleccionar rol"
+              style={{ width: '100%' }}
             />
           </div>
 
