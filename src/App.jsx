@@ -20,7 +20,7 @@ import Navbar from './components/Navbar';
 import { ToastProvider } from './components/Toast';
 
 import './App.css';
-import 'primereact/resources/themes/lara-dark-indigo/theme.css';
+import 'primereact/resources/themes/lara-light-blue/theme.css';
 import 'primereact/resources/primereact.min.css';
 import 'primeicons/primeicons.css';
 
@@ -31,7 +31,7 @@ function App() {
         <AuthProvider>
           <Fragment>
             <Navbar />
-            <div style={{ padding: '20px' }}>
+            <main>
               <Routes>
                 <Route path="/" element={<Home />} />
                 <Route 
@@ -71,7 +71,7 @@ function App() {
                   }
                 />
               </Routes>
-            </div>
+            </main>
           </Fragment>
         </AuthProvider>
       </ToastProvider>

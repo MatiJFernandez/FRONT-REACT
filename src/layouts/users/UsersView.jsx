@@ -1,200 +1,143 @@
-import { useUserContext } from '../../context/UserContext';
-import { exportToPDF } from '../../utils/ExportToPdf';
+import React, { useContext, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { DataTable } from 'primereact/datatable';  
-import { Column } from 'primereact/column';        
-import { Button } from 'primereact/button';
-import { useContext, useMemo, useState } from 'react';
+import { useUserContext } from '../../context/UserContext';
 import { AuthContext } from '../../context/AuthContext';
+import { Button } from 'primereact/button';
+import { InputText } from 'primereact/inputtext';
+import { DataTable } from 'primereact/datatable';
+import { Column } from 'primereact/column';
+import { ConfirmDialog, confirmDialog } from 'primereact/confirmdialog';
 
 export default function UsersView() {
-  const { users, deleteUser, loading, error } = useUserContext();
+  const { users, deleteUser } = useUserContext();
   const { user: currentUser } = useContext(AuthContext);
-  const [search, setSearch] = useState('');
+  const [searchTerm, setSearchTerm] = useState('');
 
-  const handleExport = () => {
-    exportToPDF(users, 'Usuarios', ['nombre', 'email', 'edad', 'rol']);
+  const filteredUsers = users.filter(user =>
+    user.nombre?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    user.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    user.rol?.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  const handleDelete = (id) => {
+    if (id === currentUser?.id) {
+      alert('No puedes eliminar tu propia cuenta');
+      return;
+    }
+    
+    confirmDialog({
+      message: '¿Estás seguro de que quieres eliminar este usuario?',
+      header: 'Confirmar eliminación',
+      icon: 'pi pi-exclamation-triangle',
+      accept: () => deleteUser(id),
+      acceptClassName: 'btn btn-danger',
+      rejectClassName: 'btn btn-secondary'
+    });
   };
 
-  // Rol informativo solamente (edición se hace en la vista de edición)
-
-  const roleBodyTemplate = (rowData) => {
+  const actionTemplate = (rowData) => {
+    if (currentUser?.rol !== 'admin') return null;
+    
     return (
-      <span className={`badge badge-${rowData.rol}`} style={{ 
-        backgroundColor: rowData.rol === 'admin' ? '#fef3c7' : 
-                     rowData.rol === 'moderador' ? '#dbeafe' : '#dcfce7',
-        color: rowData.rol === 'admin' ? '#92400e' : 
-               rowData.rol === 'moderador' ? '#1e40af' : '#166534'
-      }}>
+      <div style={{ display: 'flex', gap: '0.5rem' }}>
+        <Link to={`/usuarios/editar/${rowData.id}`}>
+          <Button 
+            icon="pi pi-pencil" 
+            className="btn btn-warning" 
+            size="small"
+            tooltip="Editar"
+          />
+        </Link>
+        {rowData.id !== currentUser?.id && (
+          <Button 
+            icon="pi pi-trash" 
+            className="btn btn-danger" 
+            size="small"
+            onClick={() => handleDelete(rowData.id)}
+            tooltip="Eliminar"
+          />
+        )}
+      </div>
+    );
+  };
+
+  const roleTemplate = (rowData) => {
+    return (
+      <span className={`badge badge-${rowData.rol}`}>
         {rowData.rol === 'admin' ? '👑 Admin' : 
          rowData.rol === 'moderador' ? '🛡️ Moderador' : '👤 Cliente'}
       </span>
     );
   };
 
-  const filteredUsers = useMemo(() => {
-    if (!Array.isArray(users)) return [];
-    const term = search.trim().toLowerCase();
-    if (!term) return users;
-    return users.filter(u =>
-      String(u?.nombre ?? '').toLowerCase().includes(term) ||
-      String(u?.email ?? '').toLowerCase().includes(term) ||
-      String(u?.rol ?? '').toLowerCase().includes(term)
-    );
-  }, [users, search]);
+  const dateTemplate = (rowData, field) => {
+    return new Date(rowData[field]).toLocaleDateString();
+  };
 
   return (
-    <div className="container" style={{ paddingTop: '2rem', paddingBottom: '4rem' }}>
+    <div className="container">
       <div className="card">
         <div className="card-header">
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
             <div>
-              <h2 style={{ margin: 0, color: 'var(--text-primary)' }}>
-                👥 Panel de Administración de Usuarios
-              </h2>
-              <p className="text-muted" style={{ margin: '0.5rem 0 0 0' }}>
-                Gestión completa de usuarios y roles del sistema
-              </p>
+              <h2>Usuarios</h2>
+              <p className="text-muted">Gestiona los usuarios del sistema</p>
             </div>
             
-            <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
-              <input
-                type="text"
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                placeholder="Buscar por nombre, email o rol"
-                style={{ padding: '0.5rem 0.75rem', border: '1px solid var(--border-color)', borderRadius: '8px' }}
-              />
+            {currentUser?.rol === 'admin' && (
               <Link to="/usuarios/crear">
                 <Button 
                   label="Crear Usuario" 
                   icon="pi pi-plus" 
-                  className="btn btn-success"
+                  className="btn btn-primary"
                 />
               </Link>
-              
-              <Link to="/">
-                <Button 
-                  label="Volver al Inicio" 
-                  icon="pi pi-home" 
-                  className="btn btn-secondary"
-                />
-              </Link>
-              
-              <Button 
-                label="Exportar PDF" 
-                icon="pi pi-file-pdf" 
-                className="btn btn-warning" 
-                onClick={handleExport}
-              />
-            </div>
+            )}
           </div>
         </div>
-        
+
         <div className="card-body">
-          {loading && (
-            <div style={{ 
-              textAlign: 'center', 
-              padding: '3rem',
-              color: 'var(--text-muted)'
-            }}>
-              <div style={{ fontSize: '2rem', marginBottom: '1rem' }}>⏳</div>
-              <p>Cargando usuarios...</p>
-            </div>
-          )}
-          
-          {error && (
-            <div style={{ 
-              padding: '1rem',
-              backgroundColor: '#fef2f2',
-              border: '1px solid #fecaca',
-              borderRadius: 'var(--radius)',
-              color: '#dc2626',
-              marginBottom: '1rem'
-            }}>
-              <strong>Error:</strong> {error}
-            </div>
-          )}
+          <div className="mb-3">
+            <InputText
+              placeholder="Buscar usuarios..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="form-input"
+              style={{ maxWidth: '300px' }}
+            />
+          </div>
 
-          {!loading && !error && (
-            <div style={{ overflow: 'auto' }}>
-              <DataTable 
-                value={filteredUsers} 
-                paginator={false} 
-                className="table"
-                style={{ 
-                  border: 'none',
-                  boxShadow: 'none'
-                }}
-              >
-                <Column 
-                  field="nombre" 
-                  header="Nombre"
-                  style={{ fontWeight: '500' }}
-                />
-                <Column 
-                  field="email" 
-                  header="Email"
-                  style={{ color: 'var(--text-secondary)' }}
-                />
-                <Column 
-                  field="edad" 
-                  header="Edad"
-                  style={{ textAlign: 'center' }}
-                />
-                <Column 
-                  field="rol" 
-                  header="Rol"
-                  body={roleBodyTemplate}
-                />
-
-                <Column 
-                  header="Acciones" 
-                  body={(rowData) => (
-                    <div style={{ display: 'flex', gap: '0.5rem' }}>
-                      <Link to={`/usuarios/editar/${rowData.id}`}>
-                        <Button 
-                          label="Editar" 
-                          icon="pi pi-pencil" 
-                          className="btn btn-primary"
-                          style={{ padding: '0.5rem 1rem', fontSize: '0.875rem' }}
-                        />
-                      </Link>
-                      {rowData.id !== currentUser.id && (
-                        <Button 
-                          label="Eliminar" 
-                          icon="pi pi-trash" 
-                          className="btn btn-danger"
-                          style={{ padding: '0.5rem 1rem', fontSize: '0.875rem' }}
-                          onClick={() => deleteUser(rowData.id)} 
-                        />
-                      )}
-                    </div>
-                  )}
-                />
-              </DataTable>
-            </div>
-          )}
-          
-          {!loading && !error && Array.isArray(users) && users.length === 0 && (
-            <div style={{ 
-              textAlign: 'center', 
-              padding: '3rem',
-              color: 'var(--text-muted)'
-            }}>
-              <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>👥</div>
-              <p>No hay usuarios registrados</p>
-              <Link to="/usuarios/crear">
-                <Button 
-                  label="Crear Primer Usuario" 
-                  className="btn btn-success"
-                  style={{ marginTop: '1rem' }}
-                />
-              </Link>
-            </div>
-          )}
+          <div className="table-container">
+            <DataTable
+              value={filteredUsers}
+              paginator
+              rows={10}
+              rowsPerPageOptions={[5, 10, 25, 50]}
+              paginatorTemplate="FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink CurrentPageReport RowsPerPageDropdown"
+              currentPageReportTemplate="Mostrando {first} a {last} de {totalRecords} usuarios"
+              emptyMessage="No se encontraron usuarios"
+              className="table"
+              stripedRows
+              responsiveLayout="scroll"
+            >
+              <Column field="id" header="ID" sortable style={{ width: '80px' }} />
+              <Column field="nombre" header="Nombre" sortable />
+              <Column field="email" header="Email" sortable />
+              <Column field="edad" header="Edad" sortable style={{ width: '80px' }} />
+              <Column field="rol" header="Rol" sortable body={roleTemplate} />
+              <Column field="createdAt" header="Fecha Creación" sortable 
+                body={(rowData) => dateTemplate(rowData, 'createdAt')} />
+              <Column field="updatedAt" header="Última Actualización" sortable 
+                body={(rowData) => dateTemplate(rowData, 'updatedAt')} />
+              {currentUser?.rol === 'admin' && (
+                <Column header="Acciones" body={actionTemplate} style={{ width: '120px' }} />
+              )}
+            </DataTable>
+          </div>
         </div>
       </div>
+
+      <ConfirmDialog />
     </div>
   );
 }
