@@ -9,7 +9,7 @@ import { InputNumber } from 'primereact/inputnumber';
 export default function ProductForm() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { createProduct, updateProduct, getProduct, loading, error } = useProductContext();
+  const { addProduct, editProduct, getProduct, loading, error } = useProductContext();
   const { user } = useContext(AuthContext);
   const [formData, setFormData] = useState({
     nombre: '',
@@ -34,16 +34,26 @@ export default function ProductForm() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     
+    console.log('=== FRONTEND: ENVIANDO PRODUCTO ===');
+    console.log('Form data:', formData);
+    console.log('Token en localStorage:', localStorage.getItem('token'));
+    console.log('addProduct:', addProduct);
+    console.log('editProduct:', editProduct);
+    
     try {
       if (id) {
-        await updateProduct(id, formData);
+        console.log('Actualizando producto...');
+        await editProduct(id, formData);
         alert('Producto actualizado exitosamente');
       } else {
-        await createProduct(formData);
+        console.log('Creando producto...');
+        await addProduct(formData);
         alert('Producto creado exitosamente');
       }
       navigate('/productos');
     } catch (error) {
+      console.error('Error en frontend:', error);
+      console.error('Error completo:', error.response?.data || error.message);
       alert('Error al guardar el producto');
     }
   };
