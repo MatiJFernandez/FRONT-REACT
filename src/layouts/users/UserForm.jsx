@@ -10,24 +10,7 @@ import { InputText } from 'primereact/inputtext';
 import { InputNumber } from 'primereact/inputnumber';
 import { Dropdown } from 'primereact/dropdown';
 
-const validationSchema = Yup.object({
-  nombre: Yup.string()
-    .required("El nombre es requerido"),
-
-  contrasenia: Yup.string()
-    .required("La contraseña es requerida")
-    .min(6, "La contraseña debe tener al menos 6 caracteres"),
-
-  email: Yup.string()
-    .email("Debe ser un email válido")
-    .required("El email es requerido"),
-
-  edad: Yup.number()
-    .typeError("La edad debe ser un número")
-    .integer("La edad debe ser un número entero")
-    .positive("La edad debe ser mayor que 0")
-    .required("La edad es requerida"),
-});
+// El schema se construirá dentro del componente para poder usar isEdit
 
 
 export default function UserForm() {
@@ -40,10 +23,18 @@ export default function UserForm() {
     email: "",
     contrasenia: "",
     edad: 0,
+    rol: 'cliente',
   });
   const { user: currentUser } = useContext(AuthContext);
 
   const isEdit = Boolean(id);
+  const validationSchema = Yup.object({
+    nombre: Yup.string().required("El nombre es requerido"),
+    email: Yup.string().email("Debe ser un email válido").required("El email es requerido"),
+    edad: Yup.number().typeError("La edad debe ser un número").integer("La edad debe ser un número entero").positive("La edad debe ser mayor que 0").required("La edad es requerida"),
+    contrasenia: isEdit ? Yup.string().notRequired() : Yup.string().required("La contraseña es requerida").min(6, "La contraseña debe tener al menos 6 caracteres"),
+    rol: Yup.mixed().oneOf(['cliente','moderador','admin']).required('El rol es requerido')
+  });
 
   useEffect(() => {
     if (isEdit) {
@@ -54,6 +45,7 @@ export default function UserForm() {
           email: user.email || "",
           contrasenia: user.contrasenia || "",
           edad: user.edad || 0,
+          rol: user.rol || 'cliente',
         });
       }
     }
@@ -61,9 +53,22 @@ export default function UserForm() {
 
   const handleSubmit = async (values) => {
     if (isEdit) {
-      await editUser(Number(id), values);
+      const payload = {
+        nombre: values.nombre,
+        email: values.email,
+        edad: Number(values.edad),
+        rol: values.rol || 'cliente',
+      };
+      await editUser(Number(id), payload);
     } else {
-      await addUser(values);
+      const payload = {
+        nombre: values.nombre,
+        email: values.email,
+        password: values.contrasenia, // backend espera "password"
+        edad: Number(values.edad),
+        rol: values.rol || 'cliente',
+      };
+      await addUser(payload);
     }
     navigate("/usuarios");
   };
@@ -90,7 +95,8 @@ export default function UserForm() {
   }
 
   const roleOptions = [
-    { label: 'Usuario', value: 'user' },
+    { label: 'Cliente', value: 'cliente' },
+    { label: 'Moderador', value: 'moderador' },
     { label: 'Administrador', value: 'admin' }
   ];
 
@@ -103,6 +109,7 @@ export default function UserForm() {
         validationSchema={validationSchema}
         onSubmit={handleSubmit}
       >
+        {({ values, setFieldValue }) => (
         <Form
           className="p-d-flex p-flex-column p-gap-3"
           style={{ width: "100%", maxWidth: "400px" }}
@@ -181,9 +188,9 @@ export default function UserForm() {
             </label>
             <Dropdown
               id="rol"
-              value={initialValues.rol}
+              value={values.rol}
               options={roleOptions}
-              onChange={(e) => setInitialValues({ ...initialValues, rol: e.value })}
+              onChange={(e) => setFieldValue('rol', e.value)}
               placeholder="Seleccionar rol"
               style={{ width: '100%' }}
             />
@@ -203,6 +210,7 @@ export default function UserForm() {
             />
           </div>
         </Form>
+        )}
       </Formik>
     </div>
   );

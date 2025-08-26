@@ -62,12 +62,11 @@ export const UserProvider = ({ children }) => {
     const updateUserRole = async (userId, newRole) => {
         setLoading(true);
         try {
-            const response = await axios.put(`http://localhost:3000/users/${userId}/role`, { rol: newRole });
-            
+            // El backend expone PUT /usuarios/:id y acepta { rol }
+            const response = await axios.put(`${BASE_URL}/${userId}`, { rol: newRole });
             if (response.status === 200) {
-                // Actualizar la lista de usuarios
-                setUsers(prevUsers => 
-                    prevUsers.map(user => 
+                setUsers(prevUsers =>
+                    prevUsers.map(user =>
                         user.id === userId ? { ...user, rol: newRole } : user
                     )
                 );

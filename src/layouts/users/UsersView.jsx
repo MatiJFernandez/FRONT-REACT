@@ -4,65 +4,20 @@ import { Link } from 'react-router-dom';
 import { DataTable } from 'primereact/datatable';  
 import { Column } from 'primereact/column';        
 import { Button } from 'primereact/button';
-import { Dropdown } from 'primereact/dropdown';
-import { useState } from 'react';
 import { useContext } from 'react';
 import { AuthContext } from '../../context/AuthContext';
 
 export default function UsersView() {
-  const { users, deleteUser, loading, error, updateUserRole } = useUserContext();
+  const { users, deleteUser, loading, error } = useUserContext();
   const { user: currentUser } = useContext(AuthContext);
-  const [editingRole, setEditingRole] = useState(null);
-  const [pendingRole, setPendingRole] = useState({});
 
   const handleExport = () => {
     exportToPDF(users, 'Usuarios', ['nombre', 'email', 'edad', 'rol']);
   };
 
-  const handleRoleChange = async (userId) => {
-    try {
-      await updateUserRole(userId, pendingRole[userId]);
-      setPendingRole(prev => {
-        const newState = { ...prev };
-        delete newState[userId];
-        return newState;
-      });
-      alert('Rol actualizado exitosamente');
-    } catch (error) {
-      console.error('Error al actualizar rol:', error);
-      alert('Error al actualizar el rol del usuario');
-    }
-  };
+  // Rol informativo solamente (edición se hace en la vista de edición)
 
   const roleBodyTemplate = (rowData) => {
-    if (currentUser.rol === 'admin' && rowData.id !== currentUser.id) {
-      return (
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-          <Dropdown
-            value={pendingRole[rowData.id] || rowData.rol}
-            options={[
-              { label: 'Cliente', value: 'cliente' },
-              { label: 'Moderador', value: 'moderador' },
-              { label: 'Administrador', value: 'admin' }
-            ]}
-            onChange={(e) => setPendingRole(prev => ({ ...prev, [rowData.id]: e.value }))}
-            placeholder="Seleccionar rol"
-            className="form-input"
-            style={{ minWidth: '140px', fontSize: '0.875rem' }}
-          />
-          {(pendingRole[rowData.id] && pendingRole[rowData.id] !== rowData.rol) && (
-            <Button
-              icon="pi pi-check"
-              className="btn btn-success"
-              style={{ padding: '0.5rem', minWidth: 'auto' }}
-              onClick={() => handleRoleChange(rowData.id)}
-              title="Guardar cambios"
-            />
-          )}
-        </div>
-      );
-    }
-    
     return (
       <span className={`badge badge-${rowData.rol}`} style={{ 
         backgroundColor: rowData.rol === 'admin' ? '#fef3c7' : 
@@ -70,8 +25,8 @@ export default function UsersView() {
         color: rowData.rol === 'admin' ? '#92400e' : 
                rowData.rol === 'moderador' ? '#1e40af' : '#166534'
       }}>
-        {rowData.rol === 'admin' ? '�� Admin' : 
-         rowData.rol === 'moderador' ? '🛡️ Moderador' : '�� Cliente'}
+        {rowData.rol === 'admin' ? '👑 Admin' : 
+         rowData.rol === 'moderador' ? '🛡️ Moderador' : '👤 Cliente'}
       </span>
     );
   };
