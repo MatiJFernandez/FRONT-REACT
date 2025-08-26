@@ -3,17 +3,29 @@ import { exportToPDF } from '../../utils/ExportToPdf';
 import { Link } from 'react-router-dom';
 import { DataTable } from 'primereact/datatable';  
 import { Column } from 'primereact/column';        
-import { Button } from 'primereact/button';
+import { Button } from 'primereact/button';  
+import { useState, useMemo } from 'react';
 import { useContext } from 'react';
 import { AuthContext } from '../../context/AuthContext';
 
 export default function ProductsView() {
   const { products, deleteProduct, loading, error } = useProductContext();
+  const [search, setSearch] = useState('');
   const { user } = useContext(AuthContext);
 
   const handleExport = () => {
     exportToPDF(products, 'Productos', ['nombre', 'precio']);
   };
+
+  const filteredProducts = useMemo(() => {
+    if (!Array.isArray(products)) return [];
+    const term = search.trim().toLowerCase();
+    if (!term) return products;
+    return products.filter(p =>
+      String(p?.nombre ?? '').toLowerCase().includes(term) ||
+      String(p?.precio ?? '').toLowerCase().includes(term)
+    );
+  }, [products, search]);
 
   return (
     <div className="container" style={{ paddingTop: '2rem', paddingBottom: '4rem' }}>
@@ -33,6 +45,13 @@ export default function ProductsView() {
             </div>
             
             <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
+              <input
+                type="text"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Buscar por nombre o precio"
+                style={{ padding: '0.5rem 0.75rem', border: '1px solid var(--border-color)', borderRadius: '8px' }}
+              />
               {user.rol === 'admin' && (
                 <Link to="/productos/crear">
                   <Button 
@@ -89,7 +108,7 @@ export default function ProductsView() {
           {!loading && !error && (
             <div style={{ overflow: 'auto' }}>
               <DataTable 
-                value={Array.isArray(products) ? products : []} 
+                value={filteredProducts} 
                 paginator={false} 
                 className="table"
                 style={{ 
@@ -134,7 +153,11 @@ export default function ProductsView() {
                             icon="pi pi-trash" 
                             className="btn btn-danger"
                             style={{ padding: '0.5rem 1rem', fontSize: '0.875rem' }}
-                            onClick={() => deleteProduct(rowData.id)} 
+                            onClick={() => {
+                              if (window.confirm('¿Seguro que deseas eliminar este producto?')) {
+                                deleteProduct(rowData.id)
+                              }
+                            }} 
                           />
                         </>
                       ) : (

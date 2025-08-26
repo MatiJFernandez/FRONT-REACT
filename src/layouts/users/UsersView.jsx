@@ -4,12 +4,13 @@ import { Link } from 'react-router-dom';
 import { DataTable } from 'primereact/datatable';  
 import { Column } from 'primereact/column';        
 import { Button } from 'primereact/button';
-import { useContext } from 'react';
+import { useContext, useMemo, useState } from 'react';
 import { AuthContext } from '../../context/AuthContext';
 
 export default function UsersView() {
   const { users, deleteUser, loading, error } = useUserContext();
   const { user: currentUser } = useContext(AuthContext);
+  const [search, setSearch] = useState('');
 
   const handleExport = () => {
     exportToPDF(users, 'Usuarios', ['nombre', 'email', 'edad', 'rol']);
@@ -31,6 +32,17 @@ export default function UsersView() {
     );
   };
 
+  const filteredUsers = useMemo(() => {
+    if (!Array.isArray(users)) return [];
+    const term = search.trim().toLowerCase();
+    if (!term) return users;
+    return users.filter(u =>
+      String(u?.nombre ?? '').toLowerCase().includes(term) ||
+      String(u?.email ?? '').toLowerCase().includes(term) ||
+      String(u?.rol ?? '').toLowerCase().includes(term)
+    );
+  }, [users, search]);
+
   return (
     <div className="container" style={{ paddingTop: '2rem', paddingBottom: '4rem' }}>
       <div className="card">
@@ -46,6 +58,13 @@ export default function UsersView() {
             </div>
             
             <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
+              <input
+                type="text"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Buscar por nombre, email o rol"
+                style={{ padding: '0.5rem 0.75rem', border: '1px solid var(--border-color)', borderRadius: '8px' }}
+              />
               <Link to="/usuarios/crear">
                 <Button 
                   label="Crear Usuario" 
@@ -100,7 +119,7 @@ export default function UsersView() {
           {!loading && !error && (
             <div style={{ overflow: 'auto' }}>
               <DataTable 
-                value={Array.isArray(users) ? users : []} 
+                value={filteredUsers} 
                 paginator={false} 
                 className="table"
                 style={{ 
