@@ -72,7 +72,7 @@ export default function ProductsView() {
                 <Button 
                   label="Crear Producto" 
                   icon="pi pi-plus" 
-                  className="btn btn-primary"
+                  className="btn btn-success"
                 />
               </Link>
             )}

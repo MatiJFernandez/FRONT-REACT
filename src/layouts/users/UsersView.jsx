@@ -89,7 +89,7 @@ export default function UsersView() {
                 <Button 
                   label="Crear Usuario" 
                   icon="pi pi-plus" 
-                  className="btn btn-primary"
+                  className="btn btn-success"
                 />
               </Link>
             )}
