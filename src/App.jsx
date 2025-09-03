@@ -1,5 +1,7 @@
 import { Fragment } from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import ForgotPassword from './layouts/auth/ForgotPassword';
+import ResetPassword from './layouts/auth/ResetPassword';
 
 import Home from './layouts/home/index';
 
@@ -50,6 +52,8 @@ function App() {
                     </PublicRoute>
                   }
                 />
+                <Route path='/clave-olvidada' element={<ForgotPassword/>}/>
+                <Route path='/recuperar-contraseña' element={<ResetPassword/>}/>
                 <Route
                   path="/productos/*"
                   element={
